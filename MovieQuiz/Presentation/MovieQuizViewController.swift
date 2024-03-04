@@ -1,5 +1,6 @@
 import UIKit
 
+// MARK: - Types
 struct QuizQuestion {
   let image: String
   let text: String
@@ -18,6 +19,7 @@ struct QuizResultsViewModel {
   let buttonText: String
 }
 
+// MARK: - Constants
 private let questions: [QuizQuestion] = [
     QuizQuestion(
         image: "The Godfather",
@@ -63,22 +65,40 @@ private let questions: [QuizQuestion] = [
 
 final class MovieQuizViewController: UIViewController {
     
-    
-    @IBOutlet weak var counterLabel: UILabel!
+    // MARK: - IBOutlet
+    @IBOutlet private var counterLabel: UILabel!
     @IBOutlet private var imageView: UIImageView!
     @IBOutlet private var yesButton: UIButton!
     @IBOutlet private var noButton: UIButton!
     @IBOutlet private var questionLabel: UILabel!
     
+    // MARK: - Private Properties
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
     
+    
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        imageView.layer.cornerRadius = 20
+        show(quiz: convert(model: questions[0]))
+    }
+    
+    // MARK: - IBAction
+    @IBAction private func noButtonPress() {
+        showAnswerResult(isCorrect: questions[currentQuestionIndex].correctAnswer == false)
+    }
+    
+    @IBAction private func yesButtonPress() {
+        showAnswerResult(isCorrect: questions[currentQuestionIndex].correctAnswer == true)
+    }
+    
+    // MARK: - Private Methods
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
+        QuizStepViewModel(
             image: UIImage(named: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)")
-        return questionStep
     }
     
     private func show(quiz step: QuizStepViewModel) {
@@ -98,9 +118,7 @@ final class MovieQuizViewController: UIViewController {
             showAlert(quiz: viewModel)
         } else {
             currentQuestionIndex += 1
-             let nextQuestion = questions[currentQuestionIndex]
-             let viewModel = convert(model: nextQuestion)
-             show(quiz: viewModel)
+            show(quiz: convert(model: questions[currentQuestionIndex]))
         }
     }
     
@@ -113,13 +131,10 @@ final class MovieQuizViewController: UIViewController {
         let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
-            let firstQuestion = questions[self.currentQuestionIndex]
-            let viewModel = self.convert(model: firstQuestion)
-            self.show(quiz: viewModel)
+            self.show(quiz: self.convert(model: questions[self.currentQuestionIndex]))
         }
         alert.addAction(action)
         self.present(alert, animated: true, completion: nil)
-        // попробуйте написать код создания и показа алерта с результатами
     }
     
     private func showAnswerResult(isCorrect: Bool) {
@@ -132,27 +147,6 @@ final class MovieQuizViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.showNextQuestionOrResults()
         }
-    }
-    
-    // MARK: - Lifecycle
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        imageView.layer.cornerRadius = 20
-        let firstQuestion = questions[0]
-        let viewModel = convert(model: firstQuestion)
-        show(quiz: viewModel)
-    }
-    
-    @IBAction private func noButtonPress() {
-        let userAnswer = false
-        let currentQuestion = questions[currentQuestionIndex]
-        showAnswerResult(isCorrect: userAnswer == currentQuestion.correctAnswer)
-    }
-    
-    @IBAction private func yesButtonPress() {
-        let userAnswer = true
-        let currentQuestion = questions[currentQuestionIndex]
-        showAnswerResult(isCorrect: userAnswer == currentQuestion.correctAnswer)
     }
     
 }
