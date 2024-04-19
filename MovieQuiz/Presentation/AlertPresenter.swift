@@ -9,7 +9,7 @@ import Foundation
 
 class AlertPresenter {
     
-    let viewController: UIViewController
+    weak var viewController: UIViewController?
     
     init(viewController: UIViewController) {
         self.viewController = viewController
@@ -28,6 +28,6 @@ class AlertPresenter {
             onDidShown()
         }
         alert.addAction(action)
-        viewController.present(alert, animated: true, completion: nil)
+        viewController?.present(alert, animated: true, completion: nil)
     }
 }
