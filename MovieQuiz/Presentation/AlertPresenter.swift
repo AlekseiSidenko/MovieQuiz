@@ -5,16 +5,14 @@
 //  Created by Алексей Сиденко on 15.04.2024.
 //
 import UIKit
-import Foundation
 
-class AlertPresenter {
+final class AlertPresenter {
     
     weak var viewController: UIViewController?
     
     init(viewController: UIViewController) {
         self.viewController = viewController
     }
-    
     
     func showAlert(quiz result: QuizResultsViewModel, onDidShown: @escaping () -> Void) {
         
