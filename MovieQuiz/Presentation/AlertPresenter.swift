@@ -14,11 +14,11 @@ final class AlertPresenter {
         self.viewController = viewController
     }
     
-    func showAlert(quiz result: QuizResultsViewModel, onDidShown: @escaping () -> Void) {
+    func showAlert(_ result: AlertModel, onDidShown: @escaping () -> Void) {
         
         let alert = UIAlertController(
             title: result.title,
-            message: result.text,
+            message: result.message,
             preferredStyle: .alert
         )
         
