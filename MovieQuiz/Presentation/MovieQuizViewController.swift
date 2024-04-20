@@ -45,8 +45,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     func didLoadDataFromServer() {
         questionFactory.requestNextQuestion()
-        DispatchQueue.main.async {
-            self.activityIndicator.isHidden = true
+        DispatchQueue.main.async {[weak self] in
+            guard let self = self else { return }
+            activityIndicator.isHidden = true
         }
     }
     
@@ -72,13 +73,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - Private Methods
     private func showLoadingIndicator() {
         activityIndicator.isHidden = false
-//        activityIndicator.color = UIColor.white
-//        activityIndicator.style = .large
+        activityIndicator.color = UIColor.white
+        activityIndicator.style = .large
         activityIndicator.startAnimating()
     }
     
     private func showNetworkError(message: String) {
-        activityIndicator.isHidden = true
+        DispatchQueue.main.async {[weak self] in
+            guard let self = self else { return }
+            activityIndicator.isHidden = true
+        }
         
         let errorModel = AlertModel(title: "Ошибка",
                                message: message,
