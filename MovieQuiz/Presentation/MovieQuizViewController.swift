@@ -20,13 +20,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var statisticService: StatisticService = StatisticServiceImplementation()
     
     // MARK: - Lifecycle
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+          return .lightContent
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        showLoadingIndicator()
+        imageView.backgroundColor = UIColor.YPBlack
         imageView.layer.cornerRadius = 20
-        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
-        self.questionFactory = questionFactory
-        questionFactory.loadData()
+        getDataForQuestionFactory()
     }
     
     // MARK: - QuestionFactoryDelegate
@@ -45,10 +47,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     func didLoadDataFromServer() {
         questionFactory.requestNextQuestion()
-        DispatchQueue.main.async {[weak self] in
-            guard let self = self else { return }
-            activityIndicator.isHidden = true
-        }
+        hideLoadingIndicator()
     }
     
     func didFailToLoadData(with error: Error) {
@@ -71,28 +70,42 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     // MARK: - Private Methods
+    
+    private func getDataForQuestionFactory() {
+        showLoadingIndicator()
+        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        self.questionFactory = questionFactory
+        questionFactory.loadData()
+    }
+    
     private func showLoadingIndicator() {
-        activityIndicator.isHidden = false
-        activityIndicator.color = UIColor.white
         activityIndicator.style = .large
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.color = UIColor.YPWhite
         activityIndicator.startAnimating()
     }
     
-    private func showNetworkError(message: String) {
+    private func hideLoadingIndicator() {
         DispatchQueue.main.async {[weak self] in
             guard let self = self else { return }
             activityIndicator.isHidden = true
         }
-        
-        let errorModel = AlertModel(title: "Ошибка",
-                               message: message,
-                               buttonText: "Попробовать еще раз")
-        
-        alertPresenter.showAlert(errorModel, onDidShown: { [weak self] in
-            self?.currentQuestionIndex = 0
-            self?.correctAnswers = 0
-            self?.questionFactory.requestNextQuestion()
-        })
+    }
+ 
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        DispatchQueue.main.async {[weak self] in
+            guard let self = self else { return }
+            let errorModel = AlertModel(title: "Ошибка",
+                                   message: message,
+                                   buttonText: "Попробовать еще раз")
+            alertPresenter.showAlert(errorModel, onDidShown: { [weak self] in
+                self?.currentQuestionIndex = 0
+                self?.correctAnswers = 0
+                self?.showLoadingIndicator()
+                self?.getDataForQuestionFactory()
+            })
+        }
     }
     
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
