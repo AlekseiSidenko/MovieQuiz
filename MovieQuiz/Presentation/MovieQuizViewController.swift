@@ -12,10 +12,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - Private Properties
     private var correctAnswers = 0
-    private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory(moviesLoader: MoviesLoader())
     lazy var alertPresenter = AlertPresenter(viewController: self)
-    private var statisticService: StatisticService = StatisticServiceImplementation()
+//    private var statisticService: StatisticService = StatisticServiceImplementation()
     private let presenter = MovieQuizPresenter()
     
     // MARK: - Lifecycle
@@ -25,6 +24,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        presenter.viewController = self
         imageView.backgroundColor = UIColor.YPBlack
         imageView.layer.cornerRadius = 20
         getDataForQuestionFactory()
@@ -33,13 +33,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - QuestionFactoryDelegate
 
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else { return }
-
-        currentQuestion = question
-        let viewModel = presenter.convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: viewModel)
-        }
+        presenter.didReceiveNextQuestion(question: question)
     }
     
     func didLoadDataFromServer() {
@@ -53,17 +47,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - IBAction
     @IBAction private func noButtonPress() {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == false)
+        presenter.noButtonPress()
     }
     
     @IBAction private func yesButtonPress() {
-        guard let currentQuestion = currentQuestion else {
-            return
-        }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == true)
+        presenter.yesButtonPress()
     }
     
     // MARK: - Private Methods
@@ -105,51 +93,36 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         }
     }
     
-    private func show(quiz step: QuizStepViewModel) {
+    func show(quiz step: QuizStepViewModel) {
         counterLabel.text = step.questionNumber
         imageView.image = step.image
         questionLabel.text = step.question
     }
     
-    private func showNextQuestionOrResults() {
-        yesButton.isEnabled = true
-        noButton.isEnabled = true
-        imageView.layer.borderWidth = 0
-        if presenter.isLastQuestion() {
-            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
-            let text = """
-            Ваш результат: \(correctAnswers)/\(presenter.questionsAmount)
-            Количество сыграных квизов: \(statisticService.gamesCount)
-            Рекорд \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))
-            Средняя точность \(String(format: "%.2f", statisticService.totalAccuracy))%
-            """
-            let viewModel = AlertModel(
-                title: "Этот раунд окончен!",
-                message: text,
-                buttonText: "Сыграть ещё раз")
-            alertPresenter.showAlert(viewModel, onDidShown: { [weak self] in
-                self?.presenter.resetQuestionIndex()
-                self?.correctAnswers = 0
-                self?.questionFactory.requestNextQuestion()
-            })
-        } else {
-            presenter.switchToNextQuestion()
-            questionFactory.requestNextQuestion()
-        }
+    func showAlertResults(alertContent viewModel: AlertModel) {
+        alertPresenter.showAlert(viewModel, onDidShown: { [weak self] in
+            self?.presenter.resetQuestionIndex()
+            self?.correctAnswers = 0
+            self?.questionFactory.requestNextQuestion()
+        })
     }
     
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         yesButton.isEnabled = false
         noButton.isEnabled = false
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.YPGreen.cgColor : UIColor.YPRed.cgColor
         if isCorrect {
-            self.correctAnswers += 1
+            presenter.correctAnswers += 1
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {[weak self] in
             guard let self = self else { return }
-            self.showNextQuestionOrResults()
+            yesButton.isEnabled = true
+            noButton.isEnabled = true
+            imageView.layer.borderWidth = 0
+            self.presenter.questionFactory = self.questionFactory
+            presenter.showNextQuestionOrResults()
         }
     }
     
